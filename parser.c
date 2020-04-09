@@ -1,100 +1,57 @@
-/* Filename: parcer.c
+﻿/* Filename: parser.c
 * Compiler: MS Visual Studio 2019
-* Author: Aria Gomes, Nicholas King
-* Course: CST 8152 - Compilers 013
+* Author: Aria Gomes & Nicholas King
+* Course: CST 8152 - Compilers 013(Aria Gomes) & 011(Nicholas King)
 * Assignment: 3 - Parser
 * Date: April 6th 2020
-* Professor: Sv. Ranev
-* Purpose: Parses the tokens collected by the scanner.
-* Function List: parser(), match(), syn_eh(), syn_printe(), gen_incode(), program(), opt_statements(), statements(), statements_p(),
-*				 statement(), assignment(), assignment_expression(), selection(), iteration(), pre_condition(), input(), variable_list(),
-*				 variable_list_p(), variable_identifier(), output(), output_list(), arithmetic(), unary_arithmetic(), additive_arithmetic(),
-*				 additive_arithmetic_p(), multiplicative_arithmetic(), multiplicative_arithmetic_p(), primary_arithmetic(), string(),
-*				 string_p(), primary_string(), conditional(), logical_OR(), logical_OR_p(), logical_AND(), logical_AND_p(), relational(),
-*				 primary_a_relational_p(), primary_s_relational_p(), primary_a_relational(), primary_s_relational()
-******************************************************/
-
-#define _CRT_SECURE_NO_WARNINGS
-
-#include <stdio.h>   /* standard input / output */
-#include <ctype.h>   /* conversion functions */
-#include <stdlib.h>  /* standard library functions and constants */
-#include <string.h>  /* string functions */
-#include <limits.h>  /* integer types constants */
-#include <float.h>   /* floating-point types constants */
+*/
 #include "parser.h"
 
 /*****************************************************
-* Function Name: parser()
-* Author: Aria Gomes
-* History/Version: April 6 1.0
-* Called Functions: malar_next_token(), program(), match(), gen_incode()
-* Parameters: void
-* Return Value: void
-* Algorithm:
+Function Name:		parser()
+Author:				Aria Gomes & Nicholas King
+History/Version:	February 25		v1.0
+Called Functions:	program(), match(), gen_incode(), malar_next_token()
+Parameters:			void
+Return Value:		void
+Algorithm:			initialize the parser.
 *****************************************************/
-void parser() {
+void parser(void) {
 	lookahead = malar_next_token();
-	program();
-	match(SEOF_T, NO_ATTR);
-	gen_incode("PLATY: Source file parsed\n");
+	program(); match(SEOF_T, NO_ATTR);
+	gen_incode("PLATY: Source file parsed");
 }
 
-/*****************************************************
-* Function Name: match(int, int)
-* Author: Aria Gomes
-* History/Version: April 6 1.0
-* Called Functions: syn_eh(), malar_next_token(), syn_printe()
+/*
+* Purpose: To match two tokens: the current input token (lookahead)
+*          and the token required by the parser.
+* Author: Aria Gomes & Nicholas King
+* Version: 1.0
+* Called Functions: syn_eh(), syn_printe(), malar_next_token()
 * Parameters: int pr_token_code, int pr_token_attribute
-* Return Value: void
-* Algorithm:
-*****************************************************/
+* Return value: returns to the program
+* Algorithm: 1. to check if the match is successful or not
+*            2. to parse the token code and check if token is SEOF_T or not
+*			 3. to check the lookahead token is ERR_T or not
+*/
 void match(int pr_token_code, int pr_token_attribute) {
-
-	/* make sure the lookahead.code at this location is the proper code */
 	if (lookahead.code != pr_token_code) {
 		syn_eh(pr_token_code);
-		return;
 	}
-
-	/* if the lookahead.code is SEOF_T then return */
-	if (lookahead.code == SEOF_T) {
-		return;
+	if (pr_token_code == KW_T && lookahead.attribute.get_int != pr_token_attribute) {
+		syn_eh(pr_token_code);
 	}
-
-	switch (pr_token_code) {
-	case KW_T:	/* if the lookahead code is a keyword make sure its the correct attribute */
-		if (pr_token_attribute != lookahead.attribute.kwt_idx) {
-			syn_eh(pr_token_code);
-			return;
-		}
-		break;
-	case LOG_OP_T:	/* if the lookahead code is a log_op make sure its the correct attribute */
-		if (pr_token_attribute != lookahead.attribute.log_op) {
-			syn_eh(pr_token_code);
-			return;
-		}
-		break;
-	case ART_OP_T: /* if the lookahead code is an art_op make sure it is the correct attribute */
-		if (pr_token_attribute != lookahead.attribute.arr_op) {
-			syn_eh(pr_token_code);
-			return;
-		}
-		break;
-	case REL_OP_T: /* if lookahead code is rel_op make sure its the correct attribute */
-		if (pr_token_attribute != lookahead.attribute.rel_op) {
-			syn_eh(pr_token_code);
-			return;
-		}
-		break;
-	default:
-		break;
+	else if (pr_token_code == LOG_OP_T && lookahead.attribute.get_int != pr_token_attribute) {
+		syn_eh(pr_token_code);
 	}
-
-	/* get the next token */
+	else if (pr_token_code == ART_OP_T && lookahead.attribute.get_int != pr_token_attribute) {
+		syn_eh(pr_token_code);
+	}
+	else if (pr_token_code == REL_OP_T && lookahead.attribute.get_int != pr_token_attribute) {
+		syn_eh(pr_token_code);
+	}
+	else if (pr_token_code == SEOF_T)return;
 	lookahead = malar_next_token();
-
-	/* if the next token is an error print out the error and then get the next token */
 	if (lookahead.code == ERR_T) {
 		syn_printe();
 		lookahead = malar_next_token();
@@ -103,55 +60,463 @@ void match(int pr_token_code, int pr_token_attribute) {
 	}
 }
 
-/*****************************************************
-* Function Name: syn_eh()
-* Author: Aria Gomes
-* History/Version: April 6 1.0
+/*
+* Purpose: To implements a simple panic mode error recovery.
+* Author: Aria Gomes & Nicholas King
+* Version: 1.0
 * Called Functions: syn_printe(), malar_next_token(), exit()
-* Parameters: int
-* Return Value: void
-* Algorithm:
-*****************************************************/
+* Parameters: int sync_token_code
+* Return value: return to the program
+* Algorithm: 1. count the error and printing
+*            2. advance the input token
+*		     3. check if the function reach the end of file
+*    		 4. find the matching token
+*/
 void syn_eh(int sync_token_code) {
-
-	/* print the error out and increment the error number */
 	syn_printe();
 	synerrno++;
-
-	do {
-		/* get next token */
-		lookahead = malar_next_token();
-
-		/* check the lookahead code against the input parameter*/
-		if (sync_token_code == lookahead.code) {
-			if (sync_token_code != SEOF_T) /* if lookahead is not SEOF_T get the next token then return */
-				lookahead = malar_next_token();
-			return;
-		}
-
-		/* if lookahead code is SEOF_T exit the program */
-		if (lookahead.code == SEOF_T) {
+	while (lookahead.code != sync_token_code) {
+		if (lookahead.code == SEOF_T && sync_token_code != SEOF_T) {
 			exit(synerrno);
-			return;
 		}
-
-		/* loop while the lookahead code is not the input parameter */
-	} while (sync_token_code != lookahead.code);
+		lookahead = malar_next_token();
+	}
+	if (sync_token_code == SEOF_T)return;
+	return;
 }
 
-/*****************************************************
-* Function Name: syn_printe()
-* Author: Aria Gomes
-* History/Version: April 6 1.0
-* Called Functions: b_markc()
+/*
+ * Purpose: print the string argument
+ * Author: Aria Gomes & Nicholas King
+ * Version: 1.0
+ * Called Functions: printf()
+ * Parameters: char *string
+ * Return value: N/A
+ * Algorithm: takes a string as an argument and prints it
+ */
+void gen_incode(char* str) {
+	printf("%s\n", str);
+}
+
+/*
+* Purpose: 1. match the tokens
+*          2. print message
+* Author: Aria Gomes & Nicholas King
+* Version: 1.0
+* Called Functions: match(), opt_statements(), gen_incode()
 * Parameters: void
-* Return Value: void
-* Algorithm:
-*****************************************************/
-/* error printing function for Assignment 3 (Parser), W20 */
+* Return value: N/A
+* Algorithm: <program>  -> PLATYPUS { <opt_statements> }
+			 FIRST(<program>)= {KW_T (PLATYPUS)}
+*/
+void program() {
+	match(KW_T, PLATYPUS); match(LBR_T, NO_ATTR);
+	opt_statements();
+	match(RBR_T, NO_ATTR);
+	gen_incode("PLATY: Program parsed");
+}
+
+/*
+* Purpose: 1. looking for the tokens
+*		   2. check for given keyword
+* Author: Aria Gomes & Nicholas King
+* Version: 1.0
+* Called Functions: statements(), gen_incode()
+* Parameters: N/A
+* Return value: N/A
+* Algorithm: <opt_statements> -> <statements> | epsilon
+			 FIRST(<opt_statements>)= {AVID_T , SVID_T , KW_T(IF) , KW_T(WHILE) , KW_T(READ) , KW_T(WRITE), epsilon}
+*/
+void opt_statements() {
+	if (lookahead.code == AVID_T
+		|| lookahead.code == SVID_T
+		|| (lookahead.code == KW_T && lookahead.attribute.get_int == IF)
+		|| (lookahead.code == KW_T && lookahead.attribute.get_int == WHILE)
+		|| (lookahead.code == KW_T && lookahead.attribute.get_int == READ)
+		|| (lookahead.code == KW_T && lookahead.attribute.get_int == WRITE))
+		statements();
+	else
+		gen_incode("PLATY: Opt_statements parsed");
+}
+
+
+/*
+* Purpose: loop the statement() and statements_p() function
+* Author: Aria Gomes & Nicholas King
+* Version: 1.0
+* Called Functions: statement(), statements_p()
+* Parameters:   N/A
+* Return value: N/A
+* Algorithm:  <statements> -> <statement> <statements’>
+			  FIRST(<statements>)= {AVID_T , SVID_T , KW_T(IF) , KW_T(WHILE) , KW_T(READ) , KW_T(WRITE)}
+*/
+void statements() {
+	 statement(); statements_prime();
+}
+/*
+<statements’> -><statement> <statement’> | eps
+FIRST(<statements’>)= {AVID_T , SVID_T , KW_T(IF) , KW_T(WHILE) , KW_T(READ) , KW_T(WRITE), eps}
+*/
+void statements_prime() {
+	if (lookahead.code == AVID_T
+		|| lookahead.code == SVID_T
+		|| (lookahead.code == KW_T && lookahead.attribute.get_int == IF)
+		|| (lookahead.code == KW_T && lookahead.attribute.get_int == WHILE)
+		|| (lookahead.code == KW_T && lookahead.attribute.get_int == READ)
+		|| (lookahead.code == KW_T && lookahead.attribute.get_int == WRITE))
+		statements();
+}
+/*
+<statement> ->
+<assignment statement>
+| <selection statement>
+| <iteration statement>
+| <input statement>
+| <output statement>
+FIRST(<statement>)= {AVID_T , SVID_T , KW_T(IF) , KW_T(WHILE) , KW_T(READ) , KW_T(WRITE)}
+*/
+void statement() {
+	if (lookahead.code == AVID_T || lookahead.code == SVID_T)assignment_statement();
+	else if (lookahead.code == KW_T && lookahead.attribute.get_int == IF)selection_statement();
+	else if (lookahead.code == KW_T && lookahead.attribute.get_int == WHILE)iteration_statement();
+	else if (lookahead.code == KW_T && lookahead.attribute.get_int == READ)input_statement();
+	else if (lookahead.code == KW_T && lookahead.attribute.get_int == WRITE)output_statement();
+	else syn_printe();
+
+
+}
+void assignment_statement() {
+	assignment_expression(); match(EOS_T, NO_ATTR);
+	gen_incode("PLATY: Assignment statement parsed");
+
+}
+/*
+< assignment expression>->AVID = <arithmetic expression> | SVID = <string expression>
+FIRST(< assignment expression>) = { AVID_T , SVID_T }
+*/
+void assignment_expression() {
+	if (lookahead.code == AVID_T) {
+		match(AVID_T, NO_ATTR);
+		match(ASS_OP_T, NO_ATTR);
+		arithmetic_expression();
+		gen_incode("PLATY: Assignment expression (arithmetic) parsed");
+	}
+	else if (lookahead.code == SVID_T) {
+		match(SVID_T, NO_ATTR);
+		match(ASS_OP_T, NO_ATTR);
+		string_expression();
+		gen_incode("PLATY: Assignment expression (string) parsed");
+	}
+	else syn_printe();
+
+}
+/*
+<selection statement> ->
+IF <pre-condition>  (<conditional expression>) THEN { <opt_statements> } ELSE { <opt_statements> } ;
+FIRST(<selection statement>)= {KW_T(IF)}
+*/
+void selection_statement() {
+	match(KW_T, IF); pre_condition(); match(LPR_T, NO_ATTR); logical_OR_expression(); match(RPR_T, NO_ATTR);
+	match(KW_T, THEN); match(LBR_T, NO_ATTR); opt_statements(); match(RBR_T, NO_ATTR);
+	match(KW_T, ELSE); match(LBR_T, NO_ATTR); opt_statements(); match(RBR_T, NO_ATTR);
+	match(EOS_T, NO_ATTR);
+	gen_incode("PLATY: Selection statement parsed");
+}
+/*
+<iteration statement> -> WHILE <pre-condition> (<conditional expression>) REPEAT { <statements>};
+FIRST(<iteration statement>)= {KW_T(WHILE)}
+*/
+void iteration_statement() {
+	match(KW_T, WHILE); pre_condition(); match(LPR_T, NO_ATTR); logical_OR_expression(); match(RPR_T, NO_ATTR);
+	match(KW_T, REPEAT); match(LBR_T, NO_ATTR); statements(); match(RBR_T, NO_ATTR); match(EOS_T, NO_ATTR);
+	gen_incode("PLATY: Iteration statement parsed");
+}
+/*
+<pre-condition> -> TRUE | FALSE
+FIRST(<pre-condition>)= {KW_T(TRUE) , KW_T (FALSE )}
+*/
+void pre_condition() {
+	if (lookahead.code == KW_T && lookahead.attribute.get_int == TRUE)match(KW_T, TRUE);
+	else if (lookahead.code == KW_T && lookahead.attribute.get_int == FALSE)match(KW_T, FALSE);
+	else syn_printe();
+
+}
+/*
+<input statement> -> READ (<variable list>);
+FIRST(<input statement>)= {KW_T(READ)}
+*/
+void input_statement() {
+	match(KW_T, READ); match(LPR_T, NO_ATTR); variable_list(); match(RPR_T, NO_ATTR); match(EOS_T, NO_ATTR);
+	gen_incode("PLATY: Input statement parsed");
+}
+/*
+<variable list> -> AVID_T<variable list’> | SVID_T<variable list’>
+FIRST(<variable list>)= {AVID_T ,SVID_T}
+*/
+void variable_list() {
+	variable_identifier(); variable_list_prime();
+	gen_incode("PLATY: Variable list parsed");
+}
+/*
+<variable list’>-> ,<variable identifier><variable list’>|  eps
+FIRST(<variable list’>)= {COM_T, eps}
+*/
+void variable_list_prime() {
+	if (lookahead.code != COM_T)
+		return;
+	match(COM_T, NO_ATTR); variable_identifier(); variable_list_prime();
+}
+void variable_identifier() {
+	if (lookahead.code == AVID_T)match(AVID_T, NO_ATTR);
+	else if (lookahead.code == SVID_T)match(SVID_T, NO_ATTR);
+	else syn_printe();
+}
+/*
+<output statement> -> WRITE (<output list>);
+FIRST(<output statement>)= {KW_T(WRITE)}
+*/
+void output_statement() {
+	match(KW_T, WRITE); match(LPR_T, NO_ATTR); output_list(); match(RPR_T, NO_ATTR); match(EOS_T, NO_ATTR);
+	gen_incode("PLATY: Output statement parsed");
+}
+/*
+<output list> -> <variable list> | STR_T | eps
+FIRST(<output list>)= {STR_T , AVID_T ,SVID_T, eps}
+*/
+void output_list() {
+	if (lookahead.code == AVID_T || lookahead.code == SVID_T)variable_list();
+	else if (lookahead.code == STR_T) {
+		match(STR_T, NO_ATTR); gen_incode("PLATY: Output list (string literal) parsed");
+	}
+	else {
+		gen_incode("PLATY: Output list (empty) parsed");
+		return;
+	}
+
+}
+/*
+<arithmetic expression> - > <unary arithmetic expression>  | <additive arithmetic expression>
+FIRST(<arithmetic expression>)= { ART_OP_T( - ), ART_OP_T( + ), AVID_T , FPL_T , INL_T , LPR_T}
+*/
+void arithmetic_expression() {
+	if ((lookahead.code == ART_OP_T && lookahead.attribute.get_int == MINUS) || (lookahead.code == ART_OP_T && lookahead.attribute.get_int == PLUS)) {
+		unary_arithmetic_expression();
+	}
+	else if (lookahead.code == AVID_T || lookahead.code == FPL_T || lookahead.code == LPR_T) {
+		additive_arithmetic_expression();
+	}
+	else syn_printe();
+	gen_incode("PLATY: Arithmetic expression parsed");
+}
+/*
+<unary arithmetic expression> -> - <primary arithmetic expression> | + <primary arithmetic expression>
+FIRST(<unary arithmetic expression>)= {ART_OP_T( - ), ART_OP_T( + )}
+*/
+void unary_arithmetic_expression() {
+	if (lookahead.code == ART_OP_T && lookahead.attribute.get_int == MINUS) {
+		match(ART_OP_T, MINUS); primary_arithmetic_expression();
+	}
+	else if (lookahead.code == ART_OP_T && lookahead.attribute.get_int == PLUS) {
+		match(ART_OP_T, PLUS); primary_arithmetic_expression();
+	}
+	gen_incode("PLATY: Unary arithmetic expression parsed");
+}
+/*
+<multiplicative arithmetic expression><additive arithmetic expression’>
+FIRST(<additive arithmetic expression>)= { AVID_T , FPL_T , INL_T , LPR_T}
+*/
+void additive_arithmetic_expression() {
+	multiplicative_arithmetic_expression(); additive_arithmetic_expression_prime();
+
+}
+/*
++  <multiplicative arithmetic expression><additive arithmetic expression’>
+| -  <multiplicative arithmetic expression><additive arithmetic expression’> | eps
+FIRST(<additive arithmetic expression’>)= {ART_OP_T(+) , ART_OP_T(-) , eps}
+*/
+void additive_arithmetic_expression_prime() {
+	if (lookahead.code == ART_OP_T && lookahead.attribute.get_int == PLUS) {
+		match(ART_OP_T, PLUS);
+		multiplicative_arithmetic_expression(); additive_arithmetic_expression_prime();
+	}
+	else if (lookahead.code == ART_OP_T && lookahead.attribute.get_int == MINUS) {
+		match(ART_OP_T, MINUS);
+		multiplicative_arithmetic_expression(); additive_arithmetic_expression_prime();
+	}
+	else { return; }
+	gen_incode("PLATY: Additive arithmetic expression parsed");
+}
+/*
+<primary arithmetic expression><multiplicative arithmetic expression’>
+FIRST(<multiplicative arithmetic expression>)= { AVID_T , FPL_T , INL_T , KW_T(LPR_T)}
+*/
+void multiplicative_arithmetic_expression() {
+	primary_arithmetic_expression(); multiplicative_arithmetic_expression_prime();
+
+}
+/*
+*<primary arithmetic expression><multiplicative arithmetic expression’>
+| /<primary arithmetic expression><multiplicative arithmetic expression’>
+|  eps
+FIRST(<multiplicative arithmetic expression’>)= {ART_OP_T( * ) , ART_OP_T( / ) , eps}
+*/
+void multiplicative_arithmetic_expression_prime() {
+	if (lookahead.code == ART_OP_T && lookahead.attribute.get_int == MULT) {
+		match(ART_OP_T, MULT);
+		primary_arithmetic_expression(); multiplicative_arithmetic_expression_prime();
+	}
+	else if (lookahead.code == ART_OP_T && lookahead.attribute.get_int == DIV) {
+		match(ART_OP_T, DIV);
+		primary_arithmetic_expression(); multiplicative_arithmetic_expression_prime();
+	}
+	else {
+		return;
+	}
+	gen_incode("PLATY: Multiplicative arithmetic expression parsed");
+}
+/*
+<primary arithmetic expression> -> AVID_T | FPL_T | INL_T | (<arithmetic expression>)
+FIRST(<primary arithmetic expression>)= {AVID_T , FPL_T , INL_T , LPR_T}
+*/
+void primary_arithmetic_expression() {
+	if (lookahead.code == AVID_T)match(AVID_T, NO_ATTR);
+	else if (lookahead.code == FPL_T)match(FPL_T, NO_ATTR);
+	else if (lookahead.code == INL_T)match(INL_T, NO_ATTR);
+	else if (lookahead.code == LPR_T) {
+		match(LPR_T, NO_ATTR);
+		arithmetic_expression(); match(RPR_T, NO_ATTR);
+	}
+	else syn_printe();
+	gen_incode("PLATY: Primary arithmetic expression parsed");
+}
+/*
+<string expression>-> <primary string expression><string expression’>
+FIRST(<string expression>)= {SVID_T , STR_T}
+*/
+void string_expression() {
+	primary_string_expression(); string_expression_prime();
+	gen_incode("PLATY: String expression parsed");
+}
+/*
+<string expression’>-> << <primary string expression><string expression’> |  eps
+FIRST(<string expression’>)= {SCC_OP_T , eps}
+*/
+void string_expression_prime() {
+	if (lookahead.code == SCC_OP_T) {
+		match(SCC_OP_T, NO_ATTR);
+		primary_string_expression();
+		string_expression_prime();
+	}
+}
+/*
+<primary string expression> -> SVID_T | STR_T
+FIRST(<primary string expression>)= {SVID_T , STR_T}
+*/
+void primary_string_expression() {
+	if (lookahead.code == SVID_T)match(SVID_T, STR_T);
+	else if (lookahead.code == STR_T)match(STR_T, NO_ATTR);
+	else syn_printe();
+	gen_incode("PLATY: Primary string expression parsed");
+}
+/*
+<logical OR expression> -> <logical AND expression><logical OR expression’>
+FIRST(<logical OR expression>)= { AVID_T , FPL_T, INL_T, SVID_T , STR_T}
+*/
+void logical_OR_expression() {
+	logical_AND_expression(); logical_OR_expression_prime();
+	gen_incode("PLATY: Conditional expression parsed");
+
+}
+/*
+<logical OR expression’>-> .OR. <logical AND expression><logical OR expression’> |  eps
+FIRST(<logical OR expression’>)={ LOG_OP_T(.OR.) , eps}
+*/
+void logical_OR_expression_prime() {
+	if (lookahead.code != LOG_OP_T || lookahead.attribute.get_int != OR)return;
+	match(LOG_OP_T, OR); logical_AND_expression(); logical_OR_expression_prime();
+	gen_incode("PLATY: Logical OR expression parsed");
+}
+/*
+<logical AND expression> -> <relational expression><logical AND expression’>
+FIRST(<logical AND expression>)= { AVID_T , FPL_T, INL_T, SVID_T , STR_T}
+*/
+void logical_AND_expression() {
+	relational_expression(); logical_AND_expression_prime();
+	//gen_incode("PLATY: Logical AND expression parsed");
+}
+/*
+<logical AND expression’>-> .AND.  <relational expression><logical AND expression’> | eps
+FIRST(<logical AND expression’>)= {LOG_OP_T(.AND.) , eps}
+*/
+void logical_AND_expression_prime() {
+	if (lookahead.code != LOG_OP_T || lookahead.attribute.get_int != AND) { return; }/*return epsilon*/
+	match(LOG_OP_T, AND); relational_expression(); gen_incode("PLATY: Logical AND expression parsed"); logical_AND_expression_prime();
+}
+/*
+<relational expression> ->
+<primary a_relational expression> <primary a_relational expression’>
+|<primary s_relational expression> <primary s_relational expression’>
+<primary a_relational expression> -> AVID_T | FPL_T | INL_T
+First (<relational expression>)= { AVID_T , FPL_T, INL_T, SVID_T , STR_T }
+*/
+void relational_expression() {
+	if (lookahead.code == AVID_T || lookahead.code == FPL_T || lookahead.code == INL_T) { primary_arelational_expression(); primary_arelational_expression_prime(); }
+	else if (lookahead.code == SVID_T || lookahead.code == STR_T) { primary_srelational_expression(); primary_srelational_expression_prime(); }
+	else syn_printe();
+	gen_incode("PLATY: Relational expression parsed");
+}
+/*
+<primary a_relational expression’> ->
+==  <primary a_relational expression>
+| <>  <primary a_relational  expression>
+| >  <primary a_relational  expression>
+| <  <primary a_relational  expression>
+FIRST(<primary a_relational expression’>)={REL_OP_T( == ), REL_OP_T(<>), REL_OP_T( > ), REL_OP_T( < )}
+*/
+void primary_arelational_expression_prime() {
+	if (lookahead.code == REL_OP_T && lookahead.attribute.get_int == EQ) { match(REL_OP_T, EQ); primary_arelational_expression(); }
+	else if (lookahead.code == REL_OP_T && lookahead.attribute.get_int == NE) { match(REL_OP_T, NE); primary_arelational_expression(); }
+	else if (lookahead.code == REL_OP_T && lookahead.attribute.get_int == GT) { match(REL_OP_T, GT); primary_arelational_expression(); }
+	else if (lookahead.code == REL_OP_T && lookahead.attribute.get_int == LT) { match(REL_OP_T, LT); primary_arelational_expression(); }
+	else syn_printe();
+}
+/*
+<primary s_relational expression’> ->
+==  <primary s_relational  expression>
+| <>  <primary s_relational  expression>
+| >  <primary s_relational  expression>
+| <  <primary s_relational  expression>
+First (<primary s_relational expression’>)={ REL_OP_T( == ), REL_OP_T(<>), REL_OP_T( > ), REL_OP_T( < )}
+*/
+void primary_srelational_expression_prime() {
+	if (lookahead.code == REL_OP_T && lookahead.attribute.get_int == EQ) { match(REL_OP_T, EQ); primary_srelational_expression(); }
+	else if (lookahead.code == REL_OP_T && lookahead.attribute.get_int == NE) { match(REL_OP_T, NE); primary_srelational_expression(); }
+	else if (lookahead.code == REL_OP_T && lookahead.attribute.get_int == GT) { match(REL_OP_T, GT); primary_srelational_expression(); }
+	else if (lookahead.code == REL_OP_T && lookahead.attribute.get_int == LT) { match(REL_OP_T, LT); primary_srelational_expression(); }
+	else syn_printe();
+}
+/*
+<primary a_relational expression> -> AVID_T | FPL_T | INL_T
+FIRST(<primary a_relational expression>)={AVID_T , FPL_T, INL_T}
+*/
+void primary_arelational_expression() {
+	if (lookahead.code == AVID_T)match(AVID_T, NO_ATTR);
+	else if (lookahead.code == FPL_T)match(FPL_T, NO_ATTR);
+	else if (lookahead.code == INL_T)match(INL_T, NO_ATTR);
+	else syn_printe();
+	gen_incode("PLATY: Primary a_relational expression parsed");
+}
+/*
+<primary s_relational expression> -> <primary string expression>
+FIRST(<primary s_relational expression>)={SVID_T , STR_T}
+*/
+void primary_srelational_expression() {
+	primary_string_expression();
+	gen_incode("PLATY: Primary s_relational expression parsed");
+}
+/* error printing function for Assignment 3 (Parser), W19 */
 void syn_printe() {
 	Token t = lookahead;
-
 	printf("PLATY: Syntax error:  Line:%3d\n", line);
 	printf("*****  Token code:%3d Attribute: ", t.code);
 	switch (t.code) {
@@ -172,7 +537,8 @@ void syn_printe() {
 		printf("%d\n", t.attribute.get_int);
 		break;
 	case STR_T:/* STR_T     6   String literal token */
-		printf("%s\n", b_markc(str_LTBL, t.attribute.str_offset));
+		b_markc(str_LTBL, t.attribute.str_offset);
+		printf("%s\n", b_location(str_LTBL));
 		break;
 
 	case SCC_OP_T: /* 7   String concatenation operator token */
@@ -219,971 +585,3 @@ void syn_printe() {
 		printf("PLATY: Scanner error: invalid token code: %d\n", t.code);
 	}/*end switch*/
 }/* end syn_printe()*/
-
-/*****************************************************
-* Function Name: gen_incode()
-* Author: Aria Gomes
-* History/Version: November 6 1.0
-* Called Functions:
-* Parameters: char * message
-* Return Value: void
-* Algorithm:
-*****************************************************/
-void gen_incode(char* message) {
-	printf("%s", message);
-}
-
-/*****************************************************
-* Function Name: program()
-* Author: Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm:
-* <program> -> PLATYPUS {<opt_statements>}
-* FIRST(<program>) -> {KW_T(PLATYPUS)
-*****************************************************/
-void program() {
-	/* <program> -> PLATYPUS (<opt_statements>) */
-	match(KW_T, PLATYPUS); /* PLATYPUS */
-	match(LBR_T, NO_ATTR); /* ( */
-	opt_statements();	   /* opt_statements */
-	match(RBR_T, NO_ATTR); /* ) */
-	gen_incode("PLATY: Program parsed\n");
-}
-
-/*****************************************************
-* Function Name: opt_statements()
-* Author: Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm:
-* <opt_statements> -> <statements><statements>
-* FIRST(<opt_statements>) -> { E, AVID_T, SVID_T, KW_T(IF), KW_T(WHILE), KW_T(READ), KW_T(WRITE) }
-*****************************************************/
-void opt_statements() {
-	/* <opt_statements> -> <statements><statements'> */
-	switch (lookahead.code) {
-	case AVID_T:
-	case SVID_T:	/* handle AVID_T and SVID_T cases */
-		statements();	/* statements, statements' */
-		break;
-	case KW_T:	/* handle KW_T case */
-		/* check for IF, WHILE, READ, WRTIE and in statements_p() */
-		if (lookahead.attribute.get_int == IF
-			|| lookahead.attribute.get_int == WHILE
-			|| lookahead.attribute.get_int == READ
-			|| lookahead.attribute.get_int == WRITE) {
-			statements();	/* statements, statements' */
-			break;
-		}
-	default:	/* empty string - optional statements */
-		gen_incode("PLATY: Opt_statements parsed\n");
-	}
-}
-
-/*****************************************************
-* Function Name : statements()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <statements> -> <statement><statements>
-* FIRST(<statements>) -> {AVID_T, SVID_T, KW_T(IF), KW_T(WHILE), KW_T(READ), KW_T(WRITE) }
-*****************************************************/
-void statements() {
-
-	/* <statements> -> <statement><statements'> */
-	statement();	/* statements */
-	statements_p();	/* statements' */
-}
-
-/*****************************************************
-*Function Name : statements_p()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <statements> -> <statement> <statements> | E
-* FIRST(<statements>) -> { E, AVID_T, SVID_T, KW_T(IF), KW_T(WHILE), KW_T(READ), KW_T(WRITE) }
-*****************************************************/
-void statements_p() {
-
-	/* <statements'> -> <statement><statements'> | E */
-	switch (lookahead.code) {
-	case KW_T:	/* KW_T for PLAYTPUS, ELSE, THEN, REPEAT */
-		switch (lookahead.attribute.kwt_idx) {
-		case PLATYPUS:
-		case ELSE:
-		case THEN:
-		case REPEAT:
-			return;
-		default:
-			break;
-		}
-	case AVID_T:
-	case SVID_T: /* AVID_T, AVID_T cases */
-		statement();	/* statements */
-		statements_p();	/* statements' */
-		break;
-	}
-}
-
-/*****************************************************
-* Function Name : statement()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <statement> -> <assignment statement>
-*			   | <selection statement>
-*              | <iteration statement>
-*              | <input statement>
-*              | <output statement>
-* FIRST(<statement>) -> {AVID_T, SVID_T, KW_T(IF), KW_T(WHILE), KW_T(READ), KW_T(WRITE) }
-*****************************************************/
-void statement() {
-
-	/* <statement> -> <assignment> | <selection> | <iteration> | <input> | <output> */
-	switch (lookahead.code) {
-	case AVID_T:
-	case SVID_T:	/* AVID_T, SVID_T handles only assignment */
-		assignment();	/* assignment */
-		break;
-	case KW_T:	/* KW_T case */
-		switch (lookahead.attribute.kwt_idx) {
-		case IF:	/* IF case, selection */
-			selection();	/* selection */
-			break;
-		case WHILE:	/* WHILE case, iteraton */
-			iteration();	/* iteration */
-			break;
-		case READ:	/* READ case, input */
-			input();	/* input */
-			break;
-		case WRITE:	/* WRITE case, output */
-			output();	/* output */
-			break;
-		default:	/* default, error */
-			syn_printe();
-		}
-		break;
-	default:	/* default, error */
-		syn_printe();
-	}
-}
-
-/*****************************************************
-* Function Name : assignment()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <assignment statement> -> <assignment expression>;
-* FIRST(<assignment statement>) -> {AVID_T, SVID_T}
-*****************************************************/
-void assignment() {
-
-	/* <assignment> -> <assignment expression>; */
-	assignment_expression();	/* assignment expression */
-	match(EOS_T, NO_ATTR);	/* the ; in the statement */
-	gen_incode("PLATY: Assignment statement parsed\n");
-}
-
-/*****************************************************
-* Function Name : assignment_expression()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <assignment expression> -> AVID = <arithmetic expression>
-*							| SVID = <string expression>
-* FIRST(<assignment expression>) -> {AVID_T, SVID_T}
-*****************************************************/
-void assignment_expression() {
-
-	/* <assignment expression> -> AVID_T | SVID_T */
-	switch (lookahead.code) {
-	case AVID_T:	/* matches AVID_T, match type and then call arithmetic */
-		match(AVID_T, NO_ATTR);
-		match(ASS_OP_T, EQ);
-		arithmetic();	/* arithmetic, AVID_T */
-		gen_incode("PLATY: Assignment expression (arithmetic) parsed\n");
-		break;
-	case SVID_T:	/* SVID_T, match type and then call string */
-		match(SVID_T, NO_ATTR);
-		match(ASS_OP_T, EQ);
-		string();	/* string, SVID_T */
-		gen_incode("PLATY: Assignment expression (string) parsed\n");
-		break;
-	default:	/* default, error */
-		syn_printe();
-		break;
-	}
-}
-
-/*****************************************************
-* Function Name : selection()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <selection statement> ->
-*					IF <pre-condition> (<conditional expression>) THEN { <opt_statements> }
-*					ELSE { <opt_statements> } ;
-* FIRST(<selection statement>) -> {KW_T(IF)}
-*****************************************************/
-void selection() {
-
-	/* <selection> -> IF <pre-condition> {<conditonal expression>}	 THEN {<opt_statments>}
-					  ELSE {<opt_statements>}; */
-	match(KW_T, IF);		/* IF */
-	pre_condition();
-	match(LPR_T, NO_ATTR);	/* ( */
-	conditional();			/* conditional expression */
-	match(RPR_T, NO_ATTR);	/* ) */
-	match(KW_T, THEN);		/* THEN */
-	match(LBR_T, NO_ATTR);	/* { */
-	opt_statements();		/* opt statements */
-	match(RBR_T, NO_ATTR);	/* } */
-	match(KW_T, ELSE);		/* ELSE */
-	match(LBR_T, NO_ATTR);	/* { */
-	opt_statements();		/* opt statements */
-	match(RBR_T, NO_ATTR);	/* } */
-	match(EOS_T, NO_ATTR);	/* ; */
-	gen_incode("PLATY: Selection statement parsed\n");
-}
-
-/*****************************************************
-* Function Name : iteration()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <iteration statement> ->
-*					WHILE <pre-condition> (<conditional expression>)
-*					REPEAT { <statements>};
-* FIRST(<iteration statement>) -> {KW_T(WHILE)}
-*****************************************************/
-void iteration() {
-
-	/* <iteration> -> WHILE <pre-condition> (<conditional>)
-					  REPEAT { <statements> }; */
-	match(KW_T, WHILE);		/* WHILE */
-	pre_condition();
-	match(LPR_T, NO_ATTR);	/* ( */
-	conditional();			/* conditional */
-	match(RPR_T, NO_ATTR);	/* ) */
-	match(KW_T, REPEAT);	/* REPEAT */
-	match(LBR_T, NO_ATTR);	/* { */
-	statements();			/* statements */
-	match(RBR_T, NO_ATTR);	/* } */
-	match(EOS_T, NO_ATTR);	/* ; */
-	gen_incode("PLATY: Iteration statement parsed\n");
-}
-
-/*****************************************************
-* Function Name : pre_condition()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <pre-condition> ->
-*				TRUE | FALSE
-* FIRST(<pre-condition>) -> {KW_T(TRUE), KW_T(FALSE)}
-*****************************************************/
-void pre_condition() {
-
-	/* <pre condition> -> TRUE | FALSE */
-	switch (lookahead.code) {
-	case KW_T:
-		switch (lookahead.attribute.kwt_idx) {
-		case TRUE:		/* TRUE */
-			match(KW_T, TRUE);
-			break;
-		case FALSE:		/* FALSE */
-			match(KW_T, FALSE);
-			break;
-		default:
-			syn_printe();
-		}
-		break;
-	default:
-		syn_printe();
-	}
-}
-
-/*****************************************************
-* Function Name : input()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <input statement> ->
-*				READ (<variable list>);
-* FIRST(<input statement>) -> {KW_T(READ)}
-*****************************************************/
-void input() {
-
-	/* <input> -> READ(<variable list>); */
-	match(KW_T, READ);		/* READ */
-	match(LPR_T, NO_ATTR);	/* ( */
-	variable_list();		/* variable list */
-	match(RPR_T, NO_ATTR);	/* ) */
-	match(EOS_T, NO_ATTR);	/* ; */
-	gen_incode("PLATY: Input statement parsed\n");
-}
-
-/*****************************************************
-* Function Name : variable_list()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <variable list> -> <variable identifier><variable list>
-* FIRST(<variable list>) -> {AVID_T, SVID_T, COM_T, E }
-*****************************************************/
-void variable_list() {
-
-	/* <variable list> -> <variable identifier><variable list'> */
-	variable_identifier(); /* variable identifier */
-	variable_list_p();	/* variable list' */
-	gen_incode("PLATY: Variable list parsed\n");
-}
-
-/*****************************************************
-* Function Name : variable_list_p()
-* Author : Aria Gomes
-* Algorithm :
-* <variable list> -> ,<variable identifier> <variable list> | E
-* FIRST(<variable list> -> { E , SVID_T, AVID_T}
-*****************************************************/
-void variable_list_p() {
-
-	/* <variable list'> -> ,<variable identifier><variable list'> | E*/
-	switch (lookahead.code) {
-	case COM_T:
-		match(COM_T, NO_ATTR);
-		variable_identifier();
-		variable_list_p();
-	default:	/* E */
-		break;
-	}
-}
-
-/*****************************************************
-* Function Name : variable_identifier()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <variable identifier> -> SVID_T | AVID_T
-* FIRST(<variable identifier>) -> {SVID_T, AVID_T}
-*****************************************************/
-void variable_identifier() {
-
-	/* <variable identifier> -> SVID_T | AVID_T */
-	switch (lookahead.code) {
-	case AVID_T:	/* AVID_T */
-		match(AVID_T, NO_ATTR);
-		break;
-	case SVID_T:	/* SVID_T */
-		match(SVID_T, NO_ATTR);
-		break;
-	default:		/* ERROR */
-		syn_printe();
-		break;
-	}
-}
-
-/*****************************************************
-* Function Name : output()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <output statement> -> WRITE(<output list>);
-* FIRST(<output statement) -> {KW_T(WRITE)}
-*****************************************************/
-void output() {
-
-	/* <output> -> WRITE(<output list>); */
-	match(KW_T, WRITE);		/* WRITE */
-	match(LPR_T, NO_ATTR);	/* ( */
-	output_list();			/* output list */
-	match(RPR_T, NO_ATTR);	/* ) */
-	match(EOS_T, NO_ATTR);	/* ; */
-	gen_incode("PLATY: Output statement parsed\n");
-}
-
-/*****************************************************
-* Function Name : output_list()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <output list> -> <opt_variable_list> | STR_T | E
-* FIRST(<output list>) -> { E, AVID_T, SVID_T, STR_T}
-*****************************************************/
-void output_list() {
-
-	/* <output list> -> AVID_T, SVID_T, STR_T, E */
-	switch (lookahead.code) {
-	case AVID_T:
-	case SVID_T:	/* AVID_T, SVID_T */
-		variable_list();	/* variable list */
-		break;
-	case STR_T:		/* STR_T */
-		match(STR_T, NO_ATTR);
-		gen_incode("PLATY: Output list (string literal) parsed\n");
-		break;
-	default:		/* E */
-		gen_incode("PLATY: Output list (empty) parsed\n");
-		break;
-	}
-}
-
-/*****************************************************
-* Function Name : arithmetic()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <arithmetic expression> - >
-*						<unary arithmetic expression>
-*					  | <additive arithmetic expression>
-* FIRST(<arithmetic expression>) -> {ART_OP_T(PLUS), ART_OP_T(MINUS), AVID_T, FPL_T, INL_T}
-*****************************************************/
-void arithmetic() {
-
-	/* <arithmetic> -> <unary arithmetic>
-					 | <additive arithmetic>*/
-	switch (lookahead.code) {
-	case ART_OP_T:
-		switch (lookahead.code) {
-		case ART_OP_T:	/* ART_OP_T */
-			switch (lookahead.attribute.arr_op) {
-			case MULT:	/* MULT */
-			case DIV:	/* DIV */
-				multiplicative_arithmetic_p();
-				additive_arithmetic_p();
-				return;
-			default:
-				break;
-			}
-			unary_arithmetic();	/* unary arithmetic */
-			break;
-		}
-		break;
-	case AVID_T:
-	case FPL_T:
-	case INL_T:
-	case LPR_T:
-		additive_arithmetic();	/* additive arithmetic */
-		break;
-	default:	/* ERROR */
-		syn_printe();	/* print error */
-		return;
-	}
-	gen_incode("PLATY: Arithmetic expression parsed\n");
-}
-
-/*****************************************************
-* Function Name : unary_arithmetic()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <unary arithmetic expression> ->
-* 							- <primary arithmetic expression>
-*						  | + <primary arithmetic expression>
-* FIRST(<unary arithmetic expression>) -> {ART_OP_T(PLUS), ART_OP_T(MINUS)}
-*****************************************************/
-void unary_arithmetic() {
-
-	/* <unary arithmetic> -> -<primary arithemtic>
-						   | +<primary arithmetic> */
-	switch (lookahead.code) {
-	case ART_OP_T:	/* ART_OP_T */
-		match(lookahead.code, lookahead.attribute.arr_op);
-		primary_arithmetic();	/* primary arithmetic */
-		gen_incode("PLATY: Unary arithmetic expression parsed\n");
-		break;
-	default:	/* ERROR */
-		syn_printe();
-		return;
-	}
-}
-
-/*****************************************************
-* Function Name : additive_arithmetic()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <additive arithmetic expression> -> <multiplicative arithmetic expression><additive arithmetic expression>
-* FIRST(<additive arithmetic expression>) -> {AVID_T, FPL_T, INL_T, LPR_T}
-*****************************************************/
-void additive_arithmetic() {
-
-	/* <additive arithmetic> -> <multiplicative arithmetic><additive arithmetic'> */
-	multiplicative_arithmetic();	/* multiplicative arithmetic */
-	additive_arithmetic_p();		/* additive arithmetic' */
-}
-
-/*****************************************************
-* Function Name : additive_arithmetic_p()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <additive arithmetic expression> ->
-*					  + <multiplicative arithmetic expression><additive arithmetic expressions>
-*					| - <multiplicative arithmetic expression><additive arithmetic expressions>
-*					| E
-* FIRST(<additive arithmetic expression> -> { E, ART_OP_T(PLUS), ART_OP_T(MINUS)}
-*****************************************************/
-void additive_arithmetic_p() {
-
-	/* <additive arithmetic'> -> + <multiplicative arithmetic><additive arithmetic'>
-							   | - <multiplicative arithmetic><additive arithmetic'>
-							   | E */
-	switch (lookahead.code) {
-	case ART_OP_T:
-		switch (lookahead.attribute.arr_op) {
-		case PLUS:
-			match(ART_OP_T, PLUS);			/* + */
-			multiplicative_arithmetic();	/* multiplicative */
-			additive_arithmetic_p();		/* additive arithmetic' */
-			break;
-		case MINUS:
-			match(ART_OP_T, MINUS);			/* - */
-			multiplicative_arithmetic();	/* multiplicative */
-			additive_arithmetic_p();		/* additive arithmetic' */
-			break;
-		default:
-			return;
-		}
-		break;
-	default:								/* E */
-		return;
-	}
-	gen_incode("PLATY: Additive arithmetic expression parsed\n");
-}
-
-/*****************************************************
-* Function Name : multiplicative_arithmetic()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <multiplicative arithmetic expression> ->
-*				<primary arithmetic expression><multiplicative arithmetic expression>
-* FIRST(<multiplicative arithmetic expression>) -> {AVID_T, FPL_T, INL_T, LPR_T}
-*****************************************************/
-void multiplicative_arithmetic() {
-
-	/* <multiplicative arithemtic> -> <priamary arithmetic><multiplicative arithmetic'> */
-	primary_arithmetic();	/* primary arithmetic */
-	multiplicative_arithmetic_p();	/* muliplicative arithmetic' */
-}
-
-/*****************************************************
-* Function Name : multiplicative_arithmetic_p()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <multiplicative arithmetic expression> ->
-*		 	   * <primary arithmetic expression><multiplicative arithmetic expression>
-*		   	 | / <primary arithmetic expression><multiplicative arithmetic expression>
-*			 | E
-* FIRST(<multiplicative arithmetic expression>) -> { E, ART_OP_T(DIV), ART_OP_T(MULT)}
-*****************************************************/
-void multiplicative_arithmetic_p() {
-
-	/* <multiplicative arithmetic'> -> * <priamry arithmetic><multiplicative arithmetic'>
-									 | / <priamry arithmetic><multiplicative arithmetic'>
-									 | E */
-	switch (lookahead.code) {
-	case ART_OP_T:			/* ART_OP_T */
-		switch (lookahead.attribute.arr_op) {
-		case DIV:
-			match(ART_OP_T, DIV);	/* / */
-			primary_arithmetic();	/* primary arithmetic */
-			multiplicative_arithmetic_p();	/* multiplicative arithmetic */
-			break;
-		case MULT:
-			match(ART_OP_T, MULT);	/* * */
-			primary_arithmetic();	/* primary arithmetic */
-			multiplicative_arithmetic_p();	/* multiplicative arithmetic */
-			break;
-		default:
-			return;
-		}
-		break;
-	default:		/* E */
-		return;
-	}
-	gen_incode("PLATY: Multiplicative arithmetic expression parsed\n");
-}
-
-/*****************************************************
-* Function Name : primary_arithmetic()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <primary arithmetic expression> ->
-*			AVID_T
-*		  | FPL_T
-*		  | INL_T
-*		  | (<arithmetic expression>)
-* FIRST(<primary arithmetic expression> -> {AVID_T, FPL_T, INL_T, LPR_T}
-*****************************************************/
-void primary_arithmetic() {
-
-	/* <primary arithmetic> -> AVID_T | FPL_T | INL_T | LPR_T */
-	switch (lookahead.code) {
-	case AVID_T:		/* AVID_T */
-		match(AVID_T, NO_ATTR);
-		break;
-	case FPL_T:			/* FPL_T */
-		match(FPL_T, NO_ATTR);
-		break;
-	case INL_T:			/* INL_T */
-		match(INL_T, NO_ATTR);
-		break;
-	case LPR_T:			/* LPR_T */
-		match(LPR_T, NO_ATTR);
-		arithmetic();	/* arithmetic */
-		match(RPR_T, NO_ATTR);
-		break;
-	default:	/* ERROR  */
-		syn_printe();
-		return;
-	}
-
-	gen_incode("PLATY: Primary arithmetic expression parsed\n");
-}
-
-/*****************************************************
-*Function Name : string()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <string expression> -> <primary string expression> <string expression>
-* FIRST(<string expression>) -> {STR_T, SVID_T}
-*****************************************************/
-void string() {
-
-	/* <string> -> <primary string><string'> */
-	primary_string();	/* primary string */
-	string_p();			/* string' */
-}
-
-/*****************************************************
-*Function Name : string_p()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <string expression> -> << <primary string expression><string expression> | E
-* FIRST(<string expression> -> { E, SCC_OP_T}
-*****************************************************/
-void string_p() {
-
-	/* <string'> -> << <primary string><string'> | E */
-	switch (lookahead.code) {
-	case SCC_OP_T:				/* << */
-		match(SCC_OP_T, NO_ATTR);
-		primary_string();		/* primary string */
-		string_p();				/* string' */
-		break;
-	default:					/* E */
-		gen_incode("PLATY: String expression parsed\n");
-	}
-}
-
-/*****************************************************
-* Function Name : primary_string()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-*  <primary string expression> ->
-*					SVID_T
-*				  | STR_T
-* FIRST(<primary string expression>) -> {SVID_T, STR_T}
-*****************************************************/
-void primary_string() {
-
-	/* <primary string> -> SVID_T | STR_T */
-	switch (lookahead.code) {
-	case SVID_T:		/* SVID_T */
-		match(SVID_T, NO_ATTR);
-		break;
-	case STR_T:			/* STR_T */
-		match(STR_T, NO_ATTR);
-		break;
-	default:			/* ERROR */
-		syn_printe();
-		return;
-	}
-	gen_incode("PLATY: Primary string expression parsed\n");
-}
-
-/*****************************************************
-*Function Name : conditional()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <conditional expression> ->
-			<logical OR expression>
-* FIRST(<conditional expression>) -> {STR_T, SVID_T, AVID_T, FPL_T, INL_T}
-*****************************************************/
-void conditional() {
-
-	/* <conditional> -> <logical OR> */
-	logical_OR();	/* logical OR */
-	gen_incode("PLATY: Conditional expression parsed\n");
-}
-
-/*****************************************************
-*Function Name : logical_OR()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <logical OR expression> -> <logical AND expression><logical OR expression>
-* FIRST(<logical OR expression>) -> {STR_T, SVID_T, AVID_T, FPL_T, INL_T}
-*****************************************************/
-void logical_OR() {
-
-	/* <logical OR> -> <logical AND><logical OR'> */
-	logical_AND();	/* logical AND */
-	logical_OR_p();	/* logical OR' */
-}
-
-/*****************************************************
-*Function Name : logical_OR_p()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <logical OR expression> -> .OR. <logical AND expression><logical OR expression> | E
-* FIRST(<logical OR expression>) -> { E, LOG_OP_T(OR)}
-*****************************************************/
-void logical_OR_p() {
-
-	/* <logical OR'> -> .OR.<logical AND><logical OR'> | E */
-	switch (lookahead.code) {
-	case LOG_OP_T:	/* LOG_OP_T */
-		switch (lookahead.attribute.log_op) {
-		case AND:	/* AND returns */
-			return;
-		default:
-			break;
-		}
-		match(LOG_OP_T, OR);
-		logical_AND();	/* logical AND */
-		logical_OR_p();	/* logical OR' */
-		gen_incode("PLATY: Logical OR expression parsed\n");
-	default:
-		break;
-	}
-}
-
-/*****************************************************
-*Function Name : logical_AND()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <logical AND expression> -> <relational expression><logical AND expression>
-* FIRST(<logical AND expression>) -> {STR_T, SVID_T, AVID_T, FPL_T, INL_T}
-*****************************************************/
-void logical_AND() {
-
-	/* <logical AND> -> <relational><logical AND'> */
-	relational();	/* relational */
-	logical_AND_p();	/* logical AND' */
-}
-
-/*****************************************************
-*Function Name : logical_AND_p()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <logical AND expression> -> .AND. <relational expression><logical AND expression | E
-* FIRST(<logical AND expression>) -> { E, LOG_OP_T(AND)}
-*****************************************************/
-void logical_AND_p() {
-
-	/* <logical AND'> -> .AND.<relational><logical AND> | E */
-	switch (lookahead.code) {
-	case LOG_OP_T:	/* LOG_OP_T */
-		switch (lookahead.attribute.log_op) {
-		case OR:	/* OR returns */
-			return;
-		default:
-			break;
-		}
-		match(LOG_OP_T, AND);
-		relational();	/* relational */
-		logical_AND_p();	/* logical AND' */
-		gen_incode("PLATY: Logical AND expression parsed\n");
-		break;
-	default:		/* E */
-		break;
-	}
-}
-
-/*****************************************************
-*Function Name : relational()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <relational expression> ->
-*			  <primary a_relational expression> <primary a_relational expression>
-*		 	| <primary s_relational expression><primary s_relational expression>
-* FIRST(<relational expression>) -> {STR_T, SVID_T, AVID_T, FPL_T, INL_T}
-*****************************************************/
-void relational() {
-
-	/* <relational> -> <primary a_relational><primary a_relational'>
-					 | <primary s_relational<primary s_relational'> */
-	switch (lookahead.code) {
-	case AVID_T:
-	case FPL_T:
-	case INL_T:	/* AVID_T, FPL_T, INL_T -> a_relational */
-		primary_a_relational();	/* primary a relational */
-		primary_a_relational_p();	/* primary a_relational' */
-		break;
-	case STR_T:
-	case SVID_T:	/* STR_T, SVID_T -> s_relational */
-		primary_s_relational();	/* primary s_relational */
-		primary_s_relational_p();	/* primary s_relational' */
-		break;
-	default:		/* ERROR */
-		syn_printe();
-	}
-	gen_incode("PLATY: Relational expression parsed\n");
-}
-
-/*****************************************************
-*Function Name : primary_a_relational_p()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <primary a_relational expression> ->
-*				  == <primary a_relational expression>
-*			   	| <> <primary a_relational expression>
-*				| > <primary a_relational expression>
-*				| < <primary a_relational expression>
-* FIRST(<primary a_relational expression>) -> {REL_OP_T(EQ), REL_OP_T(NE), REL_OP_T(LT), REL_OP_T(GT)}
-*****************************************************/
-void primary_a_relational_p() {
-
-	/* <primary a_relational'> -> == <primary a_relational>
-								| <> <primary a_relational>
-								| > <primary a_relational>
-								| < <primary a_relational> */
-	switch (lookahead.code) {
-	case REL_OP_T:	/* REL_OP_T */
-		switch (lookahead.attribute.rel_op) {
-		case EQ:	/* == */
-			match(REL_OP_T, EQ);
-			primary_a_relational();	/* primary a_relational */
-			break;
-		case NE:	/* <> */
-			match(REL_OP_T, NE);
-			primary_a_relational();	/* primary a_relational */
-			break;
-		case LT:	/* < */
-			match(REL_OP_T, LT);
-			primary_a_relational(); /* primary a_relational */
-			break;
-		case GT:	/* > */
-			match(REL_OP_T, GT);
-			primary_a_relational(); /* primary a_relational */
-			break;
-		default:				/* ERROR */
-			syn_printe();
-		}
-		break;
-	default:	/* ERROR */
-		syn_printe();
-	}
-}
-
-/*****************************************************
-*Function Name : primary_s_relational_p()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <primary s_relational expression> ->
-*		   == <primary s_relational expression>
-*		 | <> <primary s_relational expression>
-*		 | > <primary s_relational expression>
-*		 | < <primary s_relational expression>
-* FIRST(<primary s_relational expression>) -> {REL_OP_T(EQ), REL_OP_T(NE), REL_OP_T(LT), REL_OP_T(GT)}
-*****************************************************/
-void primary_s_relational_p() {
-
-	/* <primary s_relational'> -> == <primary s_relational>
-								| <> <primary s_relational>
-								| > <primary s_relational>
-								| < <primary s_relational> */
-	switch (lookahead.code) {
-	case REL_OP_T:
-		switch (lookahead.attribute.rel_op) {
-		case EQ:	/* == */
-			match(REL_OP_T, EQ);
-			primary_s_relational();		/* <primary s_relational> */
-			break;
-		case NE:	/* <> */
-			match(REL_OP_T, NE);
-			primary_s_relational();		/* <primary s_relational> */
-			break;
-		case LT:	/* > */
-			match(REL_OP_T, LT);
-			primary_s_relational();		/* <primary s_relational> */
-			break;
-		case GT:	/* < */
-			match(REL_OP_T, GT);
-			primary_s_relational();		/* <primary s_relational> */
-			break;
-		default:	/* ERROR */
-			syn_printe();
-		}
-		break;
-	default:	/* ERROR */
-		syn_printe();
-	}
-}
-
-/*****************************************************
-*Function Name : primary_a_relational()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <primary a_relational expression> ->
-*			AVID_T
-*		  | FPL_T
-*		  | INL_T
-* FIRST(primary a_relational expression> -> {AVID_T, FPL_T, INL_T}
-*****************************************************/
-void primary_a_relational() {
-
-	/* <primary a_relational> -> AVID_T | FPL_T | INL_T */
-	switch (lookahead.code) {
-	case AVID_T:	/* AVID_T */
-		match(AVID_T, NO_ATTR);
-		break;
-	case FPL_T:		/* FPL_T */
-		match(FPL_T, NO_ATTR);
-		break;
-	case INL_T:		/* INL_T */
-		match(INL_T, NO_ATTR);
-		break;
-	default:		/* ERROR */
-		syn_printe();
-	}
-	gen_incode("PLATY: Primary a_relational expression parsed\n");
-}
-
-/*****************************************************
-*Function Name : primary_s_relational()
-* Author : Aria Gomes
-* History/Version: April 6 1.0
-* Algorithm :
-* <primary s_relational expression> ->
-*			<primary string expression>
-* FIRST(primary s_relational expression>) -> {STR_T, SVID_T}
-*****************************************************/
-void primary_s_relational() {
-
-	/* <primary s_relational> -> STR_T, SVID_T */
-	switch (lookahead.code) {
-	case SVID_T:	/* SVID_T */
-	case STR_T:		/* STR_T */
-		break;
-	default:		/* ERROR */
-		syn_printe();
-	}
-	primary_string();
-	gen_incode("PLATY: Primary s_relational expression parsed\n");
-}

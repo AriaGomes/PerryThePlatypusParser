@@ -6,84 +6,78 @@
  * Assignment: 3 - Parser
  * Date: April 6th 2020
  * Professor: Svillan Ranev
- * Purpose: All of the header files and variables required for parcer.c
+ * Purpose: All of the header files and variables required for parser.c
  ***************************************/
-
-#ifndef PARCER_H_
-#define PARCER_H_
-
-#ifndef BUFFER_H_
+#pragma once
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>   /* standard input / output */
+#include <ctype.h>   /* conversion functions */
+#include <stdlib.h>  /* standard library functions and constants */
+#include <string.h>  /* string functions */
+#include <limits.h>  /* integer types constants */
+#include <float.h>   /* floating-point types constants */
 #include "buffer.h"
-#endif
-
-#ifndef TOKEN_H_
 #include "token.h"
-#endif
 
- /* Define a No Attribute value to be used when matching */
+
+#define ELSE 0
+#define FALSE 1
+#define IF 2
+#define PLATYPUS 3
+#define READ 4
+#define REPEAT 5
+#define THEN 6
+#define TRUE 7
+#define WHILE 8
+#define WRITE 9
+
 #define NO_ATTR -1
+static Token lookahead;
+extern int line;
+extern Buffer* str_LTBL;
+extern char* kw_table[];
+int synerrno;
 
-/* all the keywords with the location in array as a value */
-#define ELSE 0			/* ELSE keyword */
-#define FALSE 1			/* FALSE keyword */
-#define IF 2			/* IF keyword*/
-#define PLATYPUS 3		/* PLATYPUS keyword*/
-#define READ 4			/* READ keyword */
-#define REPEAT 5		/* REPEAT keyword */
-#define THEN 6			/* THEN keyword */
-#define TRUE 7			/* TRUE keyword */
-#define WHILE 8			/* WHILE keyword */
-#define WRITE 9			/* WRITE keyword */
 
-Token lookahead;		/* the lookahead Token*/
-int synerrno;			/* number of errors */
-
-extern Token malar_next_token();	/* external function malar_next_token() from scanner */
-extern int line;		/* external int line to count the lines */
-extern Buffer* str_LTBL;	/* the str_LTBL buffer */
-extern char* kw_table[];	/* the external kw_table */
-
-/* List of all functions in parcer.c, these are all named according to the Syntactic Specifications */
-void parser();
-void match(int, int);
-void syn_eh(int);
-void syn_printe();
+extern Token malar_next_token(void);
+void parser(void);
+void match(int pr_token_code, int pr_token_attribute);
+void syn_eh(int sync_token_code);
+void syn_printe(void);
 void gen_incode(char*);
-void program();
-void opt_statements();
-void statements();
-void statements_p();
-void statement();
-void assignment();
-void assignment_expression();
-void selection();
-void iteration();
-void pre_condition();
-void input();
-void variable_list();
-void variable_list_p();
-void variable_identifier();
-void output();
-void output_list();
-void arithmetic();
-void unary_arithmetic();
-void additive_arithmetic();
-void additive_arithmetic_p();
-void multiplicative_arithmetic();
-void multiplicative_arithmetic_p();
-void primary_arithmetic();
-void string();
-void string_p();
-void primary_string();
-void conditional();
-void logical_OR();
-void logical_OR_p();
-void logical_AND();
-void logical_AND_p();
-void relational();
-void primary_a_relational_p();
-void primary_s_relational_p();
-void primary_a_relational();
-void primary_s_relational();
 
-#endif
+void program(void);
+void opt_statements(void);
+void statements(void);
+void statements_prime(void);
+void statement(void);
+void assignment_statement(void);
+void assignment_expression(void);
+void selection_statement(void);
+void iteration_statement(void);
+void pre_condition(void);
+void input_statement(void);
+void variable_list(void);
+void variable_list_prime(void);
+void output_statement(void);
+void output_list(void);
+void variable_identifier(void);
+void arithmetic_expression(void);
+void unary_arithmetic_expression(void);
+void additive_arithmetic_expression(void);
+void additive_arithmetic_expression_prime(void);
+void multiplicative_arithmetic_expression(void);
+void multiplicative_arithmetic_expression_prime(void);
+void primary_arithmetic_expression(void);
+void string_expression(void);
+void string_expression_prime(void);
+void primary_string_expression(void);
+void logical_OR_expression(void);
+void logical_OR_expression_prime(void);
+void logical_AND_expression(void);
+void logical_AND_expression_prime(void);
+void relational_expression(void);
+void primary_arelational_expression_prime(void);
+void primary_srelational_expression_prime(void);
+void primary_arelational_expression(void);
+void primary_srelational_expression(void);

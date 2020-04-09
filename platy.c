@@ -190,5 +190,3 @@ void garbage_collect(void){
   b_free(sc_buf);
   b_free(str_LTBL);  
 }
-
-
