@@ -1,6 +1,6 @@
 /* Filename: parcer.c
 * Compiler: MS Visual Studio 2019
-* Author: Aria Gomes
+* Author: Aria Gomes, Nicholas King
 * Course: CST 8152 - Compilers 013
 * Assignment: 3 - Parser
 * Date: April 6th 2020
@@ -255,7 +255,7 @@ void program() {
 * Author: Aria Gomes
 * History/Version: April 6 1.0
 * Algorithm:
-* <opt_statements> -> <statements><statements’>
+* <opt_statements> -> <statements><statementsÂ’>
 * FIRST(<opt_statements>) -> { E, AVID_T, SVID_T, KW_T(IF), KW_T(WHILE), KW_T(READ), KW_T(WRITE) }
 *****************************************************/
 void opt_statements() {
@@ -284,7 +284,7 @@ void opt_statements() {
 * Author : Aria Gomes
 * History/Version: April 6 1.0
 * Algorithm :
-* <statements> -> <statement><statements’>
+* <statements> -> <statement><statementsÂ’>
 * FIRST(<statements>) -> {AVID_T, SVID_T, KW_T(IF), KW_T(WHILE), KW_T(READ), KW_T(WRITE) }
 *****************************************************/
 void statements() {
@@ -299,8 +299,8 @@ void statements() {
 * Author : Aria Gomes
 * History/Version: April 6 1.0
 * Algorithm :
-* <statements’> -> <statement> <statements’> | E
-* FIRST(<statements’>) -> { E, AVID_T, SVID_T, KW_T(IF), KW_T(WHILE), KW_T(READ), KW_T(WRITE) }
+* <statementsÂ’> -> <statement> <statementsÂ’> | E
+* FIRST(<statementsÂ’>) -> { E, AVID_T, SVID_T, KW_T(IF), KW_T(WHILE), KW_T(READ), KW_T(WRITE) }
 *****************************************************/
 void statements_p() {
 
@@ -527,7 +527,7 @@ void input() {
 * Author : Aria Gomes
 * History/Version: April 6 1.0
 * Algorithm :
-* <variable list> -> <variable identifier><variable list’>
+* <variable list> -> <variable identifier><variable listÂ’>
 * FIRST(<variable list>) -> {AVID_T, SVID_T, COM_T, E }
 *****************************************************/
 void variable_list() {
@@ -542,8 +542,8 @@ void variable_list() {
 * Function Name : variable_list_p()
 * Author : Aria Gomes
 * Algorithm :
-* <variable list’> -> ,<variable identifier> <variable list’> | E
-* FIRST(<variable list’> -> { E , SVID_T, AVID_T}
+* <variable listÂ’> -> ,<variable identifier> <variable listÂ’> | E
+* FIRST(<variable listÂ’> -> { E , SVID_T, AVID_T}
 *****************************************************/
 void variable_list_p() {
 
@@ -702,7 +702,7 @@ void unary_arithmetic() {
 * Author : Aria Gomes
 * History/Version: April 6 1.0
 * Algorithm :
-* <additive arithmetic expression> -> <multiplicative arithmetic expression><additive arithmetic expression’>
+* <additive arithmetic expression> -> <multiplicative arithmetic expression><additive arithmetic expressionÂ’>
 * FIRST(<additive arithmetic expression>) -> {AVID_T, FPL_T, INL_T, LPR_T}
 *****************************************************/
 void additive_arithmetic() {
@@ -717,11 +717,11 @@ void additive_arithmetic() {
 * Author : Aria Gomes
 * History/Version: April 6 1.0
 * Algorithm :
-* <additive arithmetic expression’> ->
-*					  + <multiplicative arithmetic expression><additive arithmetic expressions’>
-*					| - <multiplicative arithmetic expression><additive arithmetic expressions’>
+* <additive arithmetic expressionÂ’> ->
+*					  + <multiplicative arithmetic expression><additive arithmetic expressionsÂ’>
+*					| - <multiplicative arithmetic expression><additive arithmetic expressionsÂ’>
 *					| E
-* FIRST(<additive arithmetic expression’> -> { E, ART_OP_T(PLUS), ART_OP_T(MINUS)}
+* FIRST(<additive arithmetic expressionÂ’> -> { E, ART_OP_T(PLUS), ART_OP_T(MINUS)}
 *****************************************************/
 void additive_arithmetic_p() {
 
@@ -757,7 +757,7 @@ void additive_arithmetic_p() {
 * History/Version: April 6 1.0
 * Algorithm :
 * <multiplicative arithmetic expression> ->
-*				<primary arithmetic expression><multiplicative arithmetic expression’>
+*				<primary arithmetic expression><multiplicative arithmetic expressionÂ’>
 * FIRST(<multiplicative arithmetic expression>) -> {AVID_T, FPL_T, INL_T, LPR_T}
 *****************************************************/
 void multiplicative_arithmetic() {
@@ -772,11 +772,11 @@ void multiplicative_arithmetic() {
 * Author : Aria Gomes
 * History/Version: April 6 1.0
 * Algorithm :
-* <multiplicative arithmetic expression’> ->
-*		 	   * <primary arithmetic expression><multiplicative arithmetic expression’>
-*		   	 | / <primary arithmetic expression><multiplicative arithmetic expression’>
+* <multiplicative arithmetic expressionÂ’> ->
+*		 	   * <primary arithmetic expression><multiplicative arithmetic expressionÂ’>
+*		   	 | / <primary arithmetic expression><multiplicative arithmetic expressionÂ’>
 *			 | E
-* FIRST(<multiplicative arithmetic expression’>) -> { E, ART_OP_T(DIV), ART_OP_T(MULT)}
+* FIRST(<multiplicative arithmetic expressionÂ’>) -> { E, ART_OP_T(DIV), ART_OP_T(MULT)}
 *****************************************************/
 void multiplicative_arithmetic_p() {
 
@@ -849,7 +849,7 @@ void primary_arithmetic() {
 * Author : Aria Gomes
 * History/Version: April 6 1.0
 * Algorithm :
-* <string expression> -> <primary string expression> <string expression’>
+* <string expression> -> <primary string expression> <string expressionÂ’>
 * FIRST(<string expression>) -> {STR_T, SVID_T}
 *****************************************************/
 void string() {
@@ -864,8 +864,8 @@ void string() {
 * Author : Aria Gomes
 * History/Version: April 6 1.0
 * Algorithm :
-* <string expression’> -> << <primary string expression><string expression’> | E
-* FIRST(<string expression’> -> { E, SCC_OP_T}
+* <string expressionÂ’> -> << <primary string expression><string expressionÂ’> | E
+* FIRST(<string expressionÂ’> -> { E, SCC_OP_T}
 *****************************************************/
 void string_p() {
 
@@ -929,7 +929,7 @@ void conditional() {
 * Author : Aria Gomes
 * History/Version: April 6 1.0
 * Algorithm :
-* <logical OR expression> -> <logical AND expression><logical OR expression’>
+* <logical OR expression> -> <logical AND expression><logical OR expressionÂ’>
 * FIRST(<logical OR expression>) -> {STR_T, SVID_T, AVID_T, FPL_T, INL_T}
 *****************************************************/
 void logical_OR() {
@@ -944,8 +944,8 @@ void logical_OR() {
 * Author : Aria Gomes
 * History/Version: April 6 1.0
 * Algorithm :
-* <logical OR expression’> -> .OR. <logical AND expression><logical OR expression> | E
-* FIRST(<logical OR expression’>) -> { E, LOG_OP_T(OR)}
+* <logical OR expressionÂ’> -> .OR. <logical AND expression><logical OR expression> | E
+* FIRST(<logical OR expressionÂ’>) -> { E, LOG_OP_T(OR)}
 *****************************************************/
 void logical_OR_p() {
 
@@ -972,7 +972,7 @@ void logical_OR_p() {
 * Author : Aria Gomes
 * History/Version: April 6 1.0
 * Algorithm :
-* <logical AND expression> -> <relational expression><logical AND expression’>
+* <logical AND expression> -> <relational expression><logical AND expressionÂ’>
 * FIRST(<logical AND expression>) -> {STR_T, SVID_T, AVID_T, FPL_T, INL_T}
 *****************************************************/
 void logical_AND() {
@@ -987,8 +987,8 @@ void logical_AND() {
 * Author : Aria Gomes
 * History/Version: April 6 1.0
 * Algorithm :
-* <logical AND expression’> -> .AND. <relational expression><logical AND expression’ | E
-* FIRST(<logical AND expression’>) -> { E, LOG_OP_T(AND)}
+* <logical AND expressionÂ’> -> .AND. <relational expression><logical AND expressionÂ’ | E
+* FIRST(<logical AND expressionÂ’>) -> { E, LOG_OP_T(AND)}
 *****************************************************/
 void logical_AND_p() {
 
@@ -1017,8 +1017,8 @@ void logical_AND_p() {
 * History/Version: April 6 1.0
 * Algorithm :
 * <relational expression> ->
-*			  <primary a_relational expression> <primary a_relational expression’>
-*		 	| <primary s_relational expression><primary s_relational expression’>
+*			  <primary a_relational expression> <primary a_relational expressionÂ’>
+*		 	| <primary s_relational expression><primary s_relational expressionÂ’>
 * FIRST(<relational expression>) -> {STR_T, SVID_T, AVID_T, FPL_T, INL_T}
 *****************************************************/
 void relational() {
@@ -1048,12 +1048,12 @@ void relational() {
 * Author : Aria Gomes
 * History/Version: April 6 1.0
 * Algorithm :
-* <primary a_relational expression’> ->
+* <primary a_relational expressionÂ’> ->
 *				  == <primary a_relational expression>
 *			   	| <> <primary a_relational expression>
 *				| > <primary a_relational expression>
 *				| < <primary a_relational expression>
-* FIRST(<primary a_relational expression’>) -> {REL_OP_T(EQ), REL_OP_T(NE), REL_OP_T(LT), REL_OP_T(GT)}
+* FIRST(<primary a_relational expressionÂ’>) -> {REL_OP_T(EQ), REL_OP_T(NE), REL_OP_T(LT), REL_OP_T(GT)}
 *****************************************************/
 void primary_a_relational_p() {
 
@@ -1094,12 +1094,12 @@ void primary_a_relational_p() {
 * Author : Aria Gomes
 * History/Version: April 6 1.0
 * Algorithm :
-* <primary s_relational expression’> ->
+* <primary s_relational expressionÂ’> ->
 *		   == <primary s_relational expression>
 *		 | <> <primary s_relational expression>
 *		 | > <primary s_relational expression>
 *		 | < <primary s_relational expression>
-* FIRST(<primary s_relational expression’>) -> {REL_OP_T(EQ), REL_OP_T(NE), REL_OP_T(LT), REL_OP_T(GT)}
+* FIRST(<primary s_relational expressionÂ’>) -> {REL_OP_T(EQ), REL_OP_T(NE), REL_OP_T(LT), REL_OP_T(GT)}
 *****************************************************/
 void primary_s_relational_p() {
 
