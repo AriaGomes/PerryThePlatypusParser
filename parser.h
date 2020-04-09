@@ -1,7 +1,7 @@
 /****************************************
  * Filename: Parser.h
  * Compiler: MS Visual Studio 2019
- * Author: Aria Gomes
+ * Author: Aria Gomes, Nicholas King
  * Course: CST-8152 - Compilers 013
  * Assignment: 3 - Parser
  * Date: April 6th 2020
